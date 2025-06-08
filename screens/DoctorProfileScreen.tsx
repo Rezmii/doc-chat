@@ -63,7 +63,9 @@ const DoctorProfileScreen = ({ route, navigation }: Props) => {
       </ScrollView>
 
       <View className="border-t border-gray-200 bg-white p-4">
-        <TouchableOpacity className="h-14 w-full items-center justify-center rounded-xl bg-blue-600 active:bg-blue-700">
+        <TouchableOpacity
+          className="h-14 w-full items-center justify-center rounded-xl bg-blue-600 active:bg-blue-700"
+          onPress={() => navigation.navigate('PrivateChat', { doctorId: doctor.id })}>
           <Text className="text-lg font-semibold text-white">Rozpocznij czat z lekarzem</Text>
         </TouchableOpacity>
       </View>
