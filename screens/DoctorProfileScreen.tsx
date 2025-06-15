@@ -1,23 +1,72 @@
 import { Feather } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React from 'react';
-import { Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-// Importujemy dane i typy
-import { mockDoctors } from '../data/mockData';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { Doctor, DoctorFromAPI } from 'types';
+import { getDoctorById } from 'services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DoctorProfile'>;
 
 const DoctorProfileScreen = ({ route, navigation }: Props) => {
   const { doctorId } = route.params;
 
-  const doctor = mockDoctors.find((d) => d.id === doctorId);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Zabezpieczenie na wypadek, gdyby lekarz nie został znaleziony
-  if (!doctor) {
+  useEffect(() => {
+    const fetchDoctorProfile = async () => {
+      try {
+        const data: DoctorFromAPI = await getDoctorById(doctorId);
+        const formattedDoctor: Doctor = {
+          id: data.id,
+          name: data.user.name,
+          specialty: data.specialty,
+          rating: data.rating,
+          bio: data.bio,
+          reviews: 100,
+          photoUrl: `https://avatar.iran.liara.run/public/boy?username=${data.id}`,
+          nextAvailable: 'Dostępny',
+        };
+
+        setDoctor(formattedDoctor);
+      } catch (e) {
+        setError('Wystąpił błąd podczas ładowania profilu.');
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDoctorProfile();
+  }, [doctorId]);
+
+  if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center">
-        <Text>Nie znaleziono lekarza.</Text>
+      <SafeAreaView className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator size="large" color="#2563eb" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !doctor) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-slate-50 p-4">
+        <Text className="text-lg text-red-600">{error || 'Nie znaleziono lekarza.'}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          className="mt-4 rounded-lg bg-gray-200 px-4 py-2">
+          <Text>Wróć</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -33,7 +82,7 @@ const DoctorProfileScreen = ({ route, navigation }: Props) => {
           </TouchableOpacity>
           <View className="items-center">
             <Image
-              source={{ uri: doctor.photoUrl }}
+              source={{ uri: `https://avatar.iran.liara.run/public/boy?username=${doctor.id}` }}
               className="h-28 w-28 rounded-full border-4 border-white"
             />
             <Text className="mt-4 text-2xl font-bold text-gray-800">{doctor.name}</Text>
@@ -51,7 +100,7 @@ const DoctorProfileScreen = ({ route, navigation }: Props) => {
             <Text className="text-sm text-gray-500">Lat doświadczenia</Text>
           </View>
           <View className="items-center">
-            <Text className="text-lg font-bold text-blue-600">{doctor.reviews}+</Text>
+            <Text className="text-lg font-bold text-blue-600">100+</Text>
             <Text className="text-sm text-gray-500">Opinii</Text>
           </View>
         </View>
@@ -64,8 +113,8 @@ const DoctorProfileScreen = ({ route, navigation }: Props) => {
 
       <View className="border-t border-gray-200 bg-white p-4">
         <TouchableOpacity
-          className="h-14 w-full items-center justify-center rounded-xl bg-blue-600 active:bg-blue-700"
-          onPress={() => navigation.navigate('PrivateChat', { doctorId: doctor.id })}>
+          onPress={() => navigation.navigate('PrivateChat', { doctorId: doctor.id })}
+          className="h-14 w-full items-center justify-center rounded-xl bg-blue-600 active:bg-blue-700">
           <Text className="text-lg font-semibold text-white">Rozpocznij czat z lekarzem</Text>
         </TouchableOpacity>
       </View>
