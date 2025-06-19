@@ -20,3 +20,20 @@ export interface Doctor {
   nextAvailable: string;
   bio: string;
 }
+
+export interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai' | 'doctor';
+  isRecommendation?: boolean;
+}
+
+export interface ApiChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AIResponse {
+  reply: string;
+  recommendationReady: boolean;
+}

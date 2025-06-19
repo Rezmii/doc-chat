@@ -14,22 +14,14 @@ import {
   View,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'ai';
-  isRecommendation?: boolean;
-}
-
-const initialMessages: Message[] = [];
+import { Message, ApiChatMessage } from 'types';
+import { postChatMessage } from 'services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 const ChatScreen = ({ navigation }: Props) => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
   const scrollToBottom = () => {
@@ -47,51 +39,48 @@ const ChatScreen = ({ navigation }: Props) => {
           sender: 'ai',
         },
       ]);
-    }, 500);
+      setIsTyping(false);
+    }, 1000);
   }, []);
 
-  const handleSend = () => {
-    if (inputText.trim().length === 0) return;
-
+  const handleSend = async (text: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputText,
+      text: text,
       sender: 'user',
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInputText('');
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setIsTyping(true);
 
-    setTimeout(() => {
-      let aiResponse: Message;
-      const userMessageCount = newMessages.filter((m) => m.sender === 'user').length;
+    const apiHistory: ApiChatMessage[] = updatedMessages.map((msg) => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text,
+    }));
 
-      if (userMessageCount === 1) {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          text: 'Dziękuję. Od jak dawna odczuwasz te dolegliwości i czy występują ciągle?',
-          sender: 'ai',
-        };
-      } else if (userMessageCount === 2) {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          text: 'Rozumiem. Na podstawie podanych informacji, objawy mogą wskazywać na potrzebę konsultacji neurologicznej.',
-          sender: 'ai',
-          isRecommendation: true,
-        };
-      } else {
-        aiResponse = {
-          id: (Date.now() + 1).toString(),
-          text: 'Nie jestem w stanie dalej analizować objawów. Proszę skonsultuj się z lekarzem.',
-          sender: 'ai',
-        };
-      }
+    try {
+      const data = await postChatMessage(apiHistory);
 
+      const aiMessage: Message = {
+        id: Date.now().toString() + '-ai',
+        text: data.reply,
+        sender: 'ai',
+        isRecommendation: data.recommendationReady,
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Błąd komunikacji z API:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString() + '-error',
+        text: 'Przepraszam, mam problem z połączeniem. Spróbuj ponownie później.',
+        sender: 'ai',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-      setMessages((prev) => [...prev, aiResponse]);
-    }, 1500);
+    }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -165,24 +154,37 @@ const ChatScreen = ({ navigation }: Props) => {
           ListFooterComponent={isTyping ? <TypingIndicator /> : null}
         />
 
-        <View className="flex-row items-center space-x-2 border-t border-gray-200 bg-white p-2">
-          <TextInput
-            value={inputText}
-            onChangeText={setInputText}
-            onSubmitEditing={handleSend}
-            className="h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
-            placeholder="Napisz wiadomość..."
-            placeholderTextColor="#9CA3AF"
-          />
-          <TouchableOpacity
-            onPress={handleSend}
-            className="h-11 w-11 items-center justify-center rounded-full bg-blue-600 active:bg-blue-700"
-            activeOpacity={0.8}>
-            <Feather name="send" size={22} color="white" />
-          </TouchableOpacity>
-        </View>
+        <ChatInput onSend={handleSend} />
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+};
+
+const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
+  const [inputText, setInputText] = useState('');
+
+  const handlePress = () => {
+    if (inputText.trim().length > 0) {
+      onSend(inputText);
+      setInputText('');
+    }
+  };
+
+  return (
+    <View className="flex-row items-center space-x-2 border-t border-gray-200 bg-white p-2">
+      <TextInput
+        value={inputText}
+        onChangeText={setInputText}
+        onSubmitEditing={handlePress}
+        className="h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
+        placeholder="Napisz wiadomość..."
+      />
+      <TouchableOpacity
+        onPress={handlePress}
+        className="h-11 w-11 items-center justify-center rounded-full bg-blue-600 active:bg-blue-700">
+        <Feather name="send" size={22} color="white" />
+      </TouchableOpacity>
+    </View>
   );
 };
 
