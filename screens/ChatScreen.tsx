@@ -79,7 +79,8 @@ const ChatScreen = ({ navigation }: Props) => {
         id: Date.now().toString() + '-ai',
         text: data.reply,
         sender: 'ai',
-        isRecommendation: data.recommendationReady,
+        isRecommendation: data.specializations && data.specializations.length > 0,
+        specializations: data.specializations || [],
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -128,7 +129,9 @@ const ChatScreen = ({ navigation }: Props) => {
             {item.isRecommendation && (
               <View className="mt-3 border-t border-gray-300 pt-3">
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('DoctorList', { specialty: 'Neurologia' })}
+                  onPress={() =>
+                    navigation.navigate('DoctorList', { specialties: item.specializations || [] })
+                  }
                   className="mb-2 h-11 items-center justify-center rounded-lg bg-blue-600 active:bg-blue-700">
                   <Text className="font-semibold text-white">✅ Tak, pokaż specjalistów</Text>
                 </TouchableOpacity>

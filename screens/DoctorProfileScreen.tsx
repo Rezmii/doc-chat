@@ -34,7 +34,7 @@ const DoctorProfileScreen = ({ route, navigation }: Props) => {
           rating: data.rating,
           bio: data.bio,
           reviews: 100,
-          photoUrl: `https://avatar.iran.liara.run/public/boy?username=${data.id}`,
+          photoUrl: data.photoUrl || `https://avatar.iran.liara.run/public/boy?username=${data.id}`,
           nextAvailable: 'Dostępny',
         };
 

@@ -10,7 +10,7 @@ import PrivateChatScreen from '../screens/PrivateChatScreen';
 export type RootStackParamList = {
   Welcome: undefined;
   Chat: undefined;
-  DoctorList: { specialty: string };
+  DoctorList: { specialties: string[] };
   DoctorProfile: { doctorId: string };
   PrivateChat: { doctorId: string };
 };

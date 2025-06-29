@@ -3,6 +3,7 @@ export interface DoctorFromAPI {
   specialty: string;
   bio: string;
   rating: number;
+  photoUrl: string;
   user: {
     id: string;
     name: string;
@@ -26,6 +27,7 @@ export interface Message {
   text: string;
   sender: 'user' | 'ai' | 'doctor';
   isRecommendation?: boolean;
+  specializations?: string[];
 }
 
 export interface ApiChatMessage {
@@ -35,5 +37,5 @@ export interface ApiChatMessage {
 
 export interface AIResponse {
   reply: string;
-  recommendationReady: boolean;
+  specializations: string[];
 }

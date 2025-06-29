@@ -2,8 +2,12 @@ import { DoctorFromAPI, ApiChatMessage, AIResponse } from '../types';
 
 const API_URL = 'http://192.168.1.9:3001';
 
-export const getDoctors = async (): Promise<DoctorFromAPI[]> => {
-  const response = await fetch(`${API_URL}/api/doctors`);
+export const getDoctors = async (specialties?: string[]): Promise<DoctorFromAPI[]> => {
+  let url = `${API_URL}/api/doctors`;
+  if (specialties && specialties.length > 0) {
+    url += `?specialties=${specialties.join(',')}`;
+  }
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Błąd sieci podczas pobierania lekarzy.');
   }
