@@ -31,16 +31,29 @@ const ChatScreen = ({ navigation }: Props) => {
   };
 
   useLayoutEffect(() => {
-    setTimeout(() => {
+    if (process.env.EXPO_PUBLIC_SKIP_AI_CHAT === 'true') {
+      console.log('--- TRYB DEWELOPERSKI: Pomijanie czatu AI ---');
       setMessages([
         {
-          id: 'start-1',
-          text: 'Witaj! Jestem Twoim wirtualnym asystentem medycznym. Opisz proszę swoje objawy.',
+          id: 'dev-mode-1',
+          text: 'Tryb deweloperski jest włączony. Oto przykładowa rekomendacja, aby przejść dalej.',
           sender: 'ai',
+          isRecommendation: true,
         },
       ]);
       setIsTyping(false);
-    }, 1000);
+    } else {
+      setTimeout(() => {
+        setMessages([
+          {
+            id: 'start-1',
+            text: 'Witaj! Jestem Twoim wirtualnym asystentem medycznym. Opisz proszę swoje objawy.',
+            sender: 'ai',
+          },
+        ]);
+        setIsTyping(false);
+      }, 1000);
+    }
   }, []);
 
   const handleSend = async (text: string) => {
