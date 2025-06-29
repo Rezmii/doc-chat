@@ -95,6 +95,24 @@ const ChatScreen = ({ navigation }: Props) => {
       setIsTyping(false);
     }
   };
+  const handleDeclineRecommendation = () => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg, index) =>
+        index === prevMessages.length - 1 ? { ...msg, isRecommendation: false } : msg
+      )
+    );
+    setIsTyping(true);
+
+    setTimeout(() => {
+      const followUpMessage: Message = {
+        id: Date.now().toString(),
+        text: 'Oczywiście. Czy jest coś jeszcze, w czym mogę Ci pomóc? Możesz opisać inne objawy lub zadać dodatkowe pytanie.',
+        sender: 'ai',
+      };
+      setMessages((prev) => [...prev, followUpMessage]);
+      setIsTyping(false);
+    }, 1000);
+  };
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.sender === 'user';
@@ -114,7 +132,9 @@ const ChatScreen = ({ navigation }: Props) => {
                   className="mb-2 h-11 items-center justify-center rounded-lg bg-blue-600 active:bg-blue-700">
                   <Text className="font-semibold text-white">✅ Tak, pokaż specjalistów</Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="h-11 items-center justify-center rounded-lg bg-gray-300 active:bg-gray-400">
+                <TouchableOpacity
+                  onPress={handleDeclineRecommendation}
+                  className="h-11 items-center justify-center rounded-lg bg-gray-300 active:bg-gray-400">
                   <Text className="font-semibold text-gray-700">❌ Nie, dziękuję</Text>
                 </TouchableOpacity>
               </View>

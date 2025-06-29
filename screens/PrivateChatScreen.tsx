@@ -105,6 +105,22 @@ const PrivateChatScreen = ({ route, navigation }: Props) => {
     );
   };
 
+  const TypingIndicator = () => (
+    <View className="mb-6 flex-row items-end self-start px-4">
+      <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200">
+        {doctor && (
+          <Image
+            source={{ uri: `https://avatar.iran.liara.run/public/boy?username=${doctor.id}` }}
+            className="mr-2 h-8 w-8 rounded-full"
+          />
+        )}
+      </View>
+      <View className="max-w-[75%] rounded-2xl rounded-bl-none bg-gray-200 p-3">
+        <Text className="text-base font-medium italic text-gray-500">Lekarz pisze...</Text>
+      </View>
+    </View>
+  );
+
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
@@ -153,9 +169,7 @@ const PrivateChatScreen = ({ route, navigation }: Props) => {
           keyExtractor={(item) => item.id}
           className="flex-1 px-2 pt-4"
           onContentSizeChange={scrollToBottom}
-          ListFooterComponent={
-            isTyping ? <Text className="p-4 italic text-gray-500">Lekarz pisze...</Text> : null
-          }
+          ListFooterComponent={isTyping ? <TypingIndicator /> : null}
         />
         <ChatInput onSend={handleSend} />
       </KeyboardAvoidingView>
