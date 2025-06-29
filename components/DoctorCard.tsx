@@ -1,16 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import React from 'react';
+import { Doctor } from '../types';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
-
-export interface Doctor {
-  id: string;
-  name: string;
-  specialty: string;
-  rating: number;
-  reviews: number;
-  photoUrl: string;
-  nextAvailable: string;
-}
 
 interface DoctorCardProps {
   doctor: Doctor;
@@ -24,7 +14,10 @@ const DoctorCard = ({ doctor, onPress }: DoctorCardProps) => {
       className="mb-4 flex-row items-center rounded-2xl bg-white p-4 shadow-sm"
       activeOpacity={0.8}>
       {/* Zdjęcie lekarza */}
-      <Image source={{ uri: doctor.photoUrl }} className="mr-4 h-20 w-20 rounded-full" />
+      <Image
+        source={{ uri: doctor.photoUrl || 'https://avatar.iran.liara.run/public/boy' }}
+        className="mr-4 h-20 w-20 rounded-full"
+      />
 
       {/* Kontener na informacje tekstowe */}
       <View className="flex-1">
