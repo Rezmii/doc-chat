@@ -12,6 +12,7 @@ import {
   View,
   Image,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getDoctorById } from '../services/api';
@@ -183,6 +184,7 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
     if (inputText.trim().length > 0) {
       onSend(inputText);
       setInputText('');
+      Keyboard.dismiss();
     }
   };
   return (
@@ -191,7 +193,7 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
         value={inputText}
         onChangeText={setInputText}
         onSubmitEditing={handlePress}
-        className="h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
+        className="mr-2 h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
         placeholder="Napisz wiadomość do lekarza..."
       />
       <TouchableOpacity

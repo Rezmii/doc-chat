@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useRef, useState, useLayoutEffect } from 'react';
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -165,6 +166,8 @@ const ChatScreen = ({ navigation }: Props) => {
     </View>
   );
 
+  const isAwaitingChoice = messages.at(-1)?.isRecommendation ?? false;
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
@@ -190,20 +193,27 @@ const ChatScreen = ({ navigation }: Props) => {
           ListFooterComponent={isTyping ? <TypingIndicator /> : null}
         />
 
-        <ChatInput onSend={handleSend} />
+        <ChatInput onSend={handleSend} disabled={isAwaitingChoice} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
+const ChatInput = ({
+  onSend,
+  disabled = false,
+}: {
+  onSend: (text: string) => void;
+  disabled?: boolean;
+}) => {
   const [inputText, setInputText] = useState('');
-
   const handlePress = () => {
-    if (inputText.trim().length > 0) {
-      onSend(inputText);
-      setInputText('');
+    if (disabled || inputText.trim().length === 0) {
+      return;
     }
+    onSend(inputText);
+    setInputText('');
+    Keyboard.dismiss();
   };
 
   return (
@@ -212,12 +222,20 @@ const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
         value={inputText}
         onChangeText={setInputText}
         onSubmitEditing={handlePress}
-        className="h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
-        placeholder="Napisz wiadomość..."
+        editable={!disabled}
+        className={`mr-2 h-11 flex-1 rounded-full border border-gray-300 px-4 text-base ${
+          disabled ? 'bg-gray-200 text-gray-500' : 'bg-gray-100'
+        }`}
+        placeholder={
+          disabled ? 'Wybierz jedną z opcji powyżej, aby kontynuować' : 'Napisz wiadomość...'
+        }
       />
       <TouchableOpacity
         onPress={handlePress}
-        className="h-11 w-11 items-center justify-center rounded-full bg-blue-600 active:bg-blue-700">
+        disabled={disabled}
+        className={`h-11 w-11 items-center justify-center rounded-full ${
+          disabled ? 'bg-blue-300' : 'bg-blue-600 active:bg-blue-700'
+        }`}>
         <Feather name="send" size={22} color="white" />
       </TouchableOpacity>
     </View>
