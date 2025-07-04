@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -16,14 +16,14 @@ import {
 } from 'react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getDoctorById } from '../services/api';
-import { DoctorFromAPI, Message } from '../types';
+import { Doctor, Message } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PrivateChat'>;
 
 const PrivateChatScreen = ({ route, navigation }: Props) => {
   const { doctorId } = route.params;
 
-  const [doctor, setDoctor] = useState<DoctorFromAPI | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +40,7 @@ const PrivateChatScreen = ({ route, navigation }: Props) => {
           {
             id: 'welcome-1',
             sender: 'doctor',
-            text: `Dzień dobry, jestem ${fetchedDoctor.user.name}. Proszę opisać swój problem, a ja postaram się pomóc.`,
+            text: `Dzień dobry, jestem ${fetchedDoctor.name} Proszę opisać swój problem, a ja postaram się pomóc.`,
             isRecommendation: false,
           },
         ]);
@@ -158,7 +158,7 @@ const PrivateChatScreen = ({ route, navigation }: Props) => {
             className="h-10 w-10 rounded-full"
           />
           <View className="ml-3 flex-1">
-            <Text className="text-base font-bold text-gray-800">{doctor.user.name}</Text>
+            <Text className="text-base font-bold text-gray-800">{doctor.name}</Text>
             <Text className="text-sm text-green-600">Online</Text>
           </View>
         </View>

@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { Doctor, DoctorFromAPI } from 'types';
+import { Doctor } from 'types';
 import { getDoctorById } from 'services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DoctorProfile'>;
@@ -26,19 +26,9 @@ const DoctorProfileScreen = ({ route, navigation }: Props) => {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const data: DoctorFromAPI = await getDoctorById(doctorId);
-        const formattedDoctor: Doctor = {
-          id: data.id,
-          name: data.user.name,
-          specialty: data.specialty,
-          rating: data.rating,
-          bio: data.bio,
-          reviews: 100,
-          photoUrl: data.photoUrl || `https://avatar.iran.liara.run/public/boy?username=${data.id}`,
-          nextAvailable: 'Dostępny',
-        };
+        const data: Doctor = await getDoctorById(doctorId);
 
-        setDoctor(formattedDoctor);
+        setDoctor(data);
       } catch (e) {
         setError('Wystąpił błąd podczas ładowania profilu.');
         console.error(e);

@@ -36,21 +36,10 @@ const DoctorListScreen = ({ route, navigation }: Props) => {
       setInfoMessage(null);
 
       try {
-        const recommendedDoctorsData = await getDoctors(specialties);
+        const recommendedDoctors: Doctor[] = await getDoctors(specialties);
 
-        if (recommendedDoctorsData.length > 0) {
-          const formattedDoctors: Doctor[] = recommendedDoctorsData.map((d) => ({
-            id: d.id,
-            name: d.user.name,
-            specialty: d.specialty,
-            rating: d.rating,
-            bio: d.bio,
-            reviews: 0,
-            photoUrl: d.photoUrl || `https://avatar.iran.liara.run/public/boy?username=${d.id}`,
-            nextAvailable: 'Dostępny',
-          }));
-
-          const groups: { [key: string]: Doctor[] } = formattedDoctors.reduce(
+        if (recommendedDoctors.length > 0) {
+          const groups: { [key: string]: Doctor[] } = recommendedDoctors.reduce(
             (acc, doctor) => {
               const { specialty } = doctor;
               if (!acc[specialty]) {
@@ -68,7 +57,7 @@ const DoctorListScreen = ({ route, navigation }: Props) => {
           }));
           setSections(foundSections);
 
-          const foundSpecs = [...new Set(formattedDoctors.map((d) => d.specialty))];
+          const foundSpecs = [...new Set(recommendedDoctors.map((d) => d.specialty))];
           const missingSpecs = specialties.filter((s) => !foundSpecs.includes(s));
           if (missingSpecs.length > 0) {
             setInfoMessage(
@@ -84,20 +73,10 @@ const DoctorListScreen = ({ route, navigation }: Props) => {
             )}. Poniżej znajdziesz listę dostępnych lekarzy rodzinnych, którzy mogą Ci pomóc.`
           );
 
-          const familyDoctorsData = await getDoctors(['Lekarz Rodzinny']);
+          const familyDoctors: Doctor[] = await getDoctors(['Lekarz Rodzinny']);
 
-          if (familyDoctorsData.length > 0) {
-            const formattedFamilyDoctors: Doctor[] = familyDoctorsData.map((d) => ({
-              id: d.id,
-              name: d.user.name,
-              specialty: d.specialty,
-              rating: d.rating,
-              bio: d.bio,
-              reviews: 0,
-              photoUrl: d.photoUrl || `https://avatar.iran.liara.run/public/boy?username=${d.id}`,
-              nextAvailable: 'Dostępny',
-            }));
-            setSections([{ title: 'Proponowani lekarze rodzinni', data: formattedFamilyDoctors }]);
+          if (familyDoctors.length > 0) {
+            setSections([{ title: 'Proponowani lekarze rodzinni', data: familyDoctors }]);
           } else {
             setInfoMessage(
               `Niestety, w tym momencie nie znaleźliśmy żadnych dostępnych specjalistów z dziedzin: ${specialties.join(
