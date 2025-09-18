@@ -14,9 +14,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { postChatMessage } from '../services/api';
+import { ApiChatMessage, Message } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { Message, ApiChatMessage } from 'types';
-import { postChatMessage } from 'services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
@@ -25,10 +25,8 @@ const ChatScreen = ({ navigation }: Props) => {
   const [isTyping, setIsTyping] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
-  const scrollToBottom = () => {
-    if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
-    }
+ const scrollToBottom = () => {
+    flatListRef.current?.scrollToEnd({ animated: true });
   };
 
   useLayoutEffect(() => {
@@ -37,9 +35,8 @@ const ChatScreen = ({ navigation }: Props) => {
       setMessages([
         {
           id: 'dev-mode-1',
-          text: 'Tryb deweloperski jest włączony. Oto przykładowa rekomendacja, aby przejść dalej.',
+          text: 'Tryb deweloperski jest włączony.',
           sender: 'ai',
-          isRecommendation: true,
         },
       ]);
       setIsTyping(false);
@@ -80,8 +77,6 @@ const ChatScreen = ({ navigation }: Props) => {
         id: Date.now().toString() + '-ai',
         text: data.reply,
         sender: 'ai',
-        isRecommendation: data.specializations && data.specializations.length > 0,
-        specializations: data.specializations || [],
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -97,29 +92,11 @@ const ChatScreen = ({ navigation }: Props) => {
       setIsTyping(false);
     }
   };
-  const handleDeclineRecommendation = () => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg, index) =>
-        index === prevMessages.length - 1 ? { ...msg, isRecommendation: false } : msg
-      )
-    );
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const followUpMessage: Message = {
-        id: Date.now().toString(),
-        text: 'Oczywiście. Czy jest coś jeszcze, w czym mogę Ci pomóc? Możesz opisać inne objawy lub zadać dodatkowe pytanie.',
-        sender: 'ai',
-      };
-      setMessages((prev) => [...prev, followUpMessage]);
-      setIsTyping(false);
-    }, 1000);
-  };
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.sender === 'user';
 
-    if (!isUser) {
+     if (!isUser) {
       return (
         <View className="mb-6 flex-row items-end self-start px-4">
           <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200">
@@ -127,22 +104,6 @@ const ChatScreen = ({ navigation }: Props) => {
           </View>
           <View className="max-w-[75%] rounded-2xl rounded-bl-none bg-gray-200 p-3">
             <Text className="text-base text-gray-800">{item.text}</Text>
-            {item.isRecommendation && (
-              <View className="mt-3 border-t border-gray-300 pt-3">
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate('DoctorList', { specialties: item.specializations || [] })
-                  }
-                  className="mb-2 h-11 items-center justify-center rounded-lg bg-blue-600 active:bg-blue-700">
-                  <Text className="font-semibold text-white">✅ Tak, pokaż specjalistów</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleDeclineRecommendation}
-                  className="h-11 items-center justify-center rounded-lg bg-gray-300 active:bg-gray-400">
-                  <Text className="font-semibold text-gray-700">❌ Nie, dziękuję</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </View>
       );
@@ -165,8 +126,6 @@ const ChatScreen = ({ navigation }: Props) => {
       </View>
     </View>
   );
-
-  const isAwaitingChoice = messages.at(-1)?.isRecommendation ?? false;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -193,49 +152,35 @@ const ChatScreen = ({ navigation }: Props) => {
           ListFooterComponent={isTyping ? <TypingIndicator /> : null}
         />
 
-        <ChatInput onSend={handleSend} disabled={isAwaitingChoice} />
+        <ChatInput onSend={handleSend} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-const ChatInput = ({
-  onSend,
-  disabled = false,
-}: {
-  onSend: (text: string) => void;
-  disabled?: boolean;
-}) => {
+const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
   const [inputText, setInputText] = useState('');
   const handlePress = () => {
-    if (disabled || inputText.trim().length === 0) {
-      return;
+    if (inputText.trim().length > 0) {
+      onSend(inputText);
+      setInputText('');
+      Keyboard.dismiss();
     }
-    onSend(inputText);
-    setInputText('');
-    Keyboard.dismiss();
   };
 
-  return (
+   return (
     <View className="flex-row items-center space-x-2 border-t border-gray-200 bg-white p-2">
       <TextInput
         value={inputText}
         onChangeText={setInputText}
         onSubmitEditing={handlePress}
-        editable={!disabled}
-        className={`mr-2 h-11 flex-1 rounded-full border border-gray-300 px-4 text-base ${
-          disabled ? 'bg-gray-200 text-gray-500' : 'bg-gray-100'
-        }`}
-        placeholder={
-          disabled ? 'Wybierz jedną z opcji powyżej, aby kontynuować' : 'Napisz wiadomość...'
-        }
+        editable={true}
+        className="mr-2 h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
+        placeholder="Napisz wiadomość..."
       />
       <TouchableOpacity
         onPress={handlePress}
-        disabled={disabled}
-        className={`h-11 w-11 items-center justify-center rounded-full ${
-          disabled ? 'bg-blue-300' : 'bg-blue-600 active:bg-blue-700'
-        }`}>
+        className="h-11 w-11 items-center justify-center rounded-full bg-blue-600 active:bg-blue-700">
         <Feather name="send" size={22} color="white" />
       </TouchableOpacity>
     </View>
