@@ -5,12 +5,12 @@ export interface AISummary {
   questionsForDoctor: string[];
 }
 
+export type MessageContent = { type: 'text'; text: string } | { type: 'summary'; data: AISummary };
+
 export interface Message {
   id: string;
   sender: 'user' | 'ai';
-  isSummary?: boolean;
-  text: string;
-  summaryData?: AISummary;
+  content: MessageContent;
 }
 
 export interface ApiChatMessage {

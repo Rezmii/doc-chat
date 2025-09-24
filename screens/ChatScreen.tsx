@@ -1,22 +1,12 @@
-import { Feather } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useRef, useState } from 'react';
-import {
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-// KROK 1: Poprawny import SafeAreaView
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { postChatMessage } from '../services/api';
-import { ApiChatMessage, Message } from '../types';
+import { AIResponse, ApiChatMessage, Message } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import ChatInput from '../components/ChatInput';
+import SummaryCard from '../components/SummaryCard';
 
 const OnboardingHeader = () => (
   <View className="items-center px-6 text-center">
@@ -53,31 +43,38 @@ const ChatScreen = ({ navigation }: Props) => {
     setInputText('');
     Keyboard.dismiss();
 
-    const userMessage: Message = { id: Date.now().toString(), text: textToSend, sender: 'user' };
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      content: { type: 'text', text: textToSend },
+    };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setIsTyping(true);
 
     const newHistory: ApiChatMessage[] = [...messages, userMessage].map((msg) => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
-      content: msg.text,
+      content: msg.content.type === 'text' ? msg.content.text : JSON.stringify(msg.content.data),
     }));
 
     try {
-      const data = await postChatMessage(newHistory);
+      const data: AIResponse = await postChatMessage(newHistory);
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
-        text: data.reply,
         sender: 'ai',
+        content:
+          data.type === 'summary'
+            ? { type: 'summary', data: data.content }
+            : { type: 'text', text: data.content },
       };
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error('Błąd komunikacji z API:', error);
+      console.error('Błąd w handleSend:', error);
       const errorMessageText =
         error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.';
       const errorMessage: Message = {
         id: Date.now().toString() + '-error',
-        text: errorMessageText,
         sender: 'ai',
+        content: { type: 'text', text: errorMessageText },
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -86,22 +83,28 @@ const ChatScreen = ({ navigation }: Props) => {
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
-    const isUser = item.sender === 'user';
-    if (!isUser) {
+    if (item.sender === 'ai' && item.content.type === 'summary') {
+      return <SummaryCard summary={item.content.data} />;
+    }
+
+    const textToShow = item.content.type === 'text' ? item.content.text : '[Podsumowanie]';
+
+    if (item.sender === 'ai') {
       return (
         <View className="mb-6 flex-row items-end self-start px-4">
           <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200">
             <Text className="text-lg">🤖</Text>
           </View>
           <View className="max-w-[75%] rounded-2xl rounded-bl-none bg-gray-200 p-3">
-            <Text className="text-base text-gray-800">{item.text}</Text>
+            <Text className="text-base text-gray-800">{textToShow}</Text>
           </View>
         </View>
       );
     }
+
     return (
       <View className="mb-6 max-w-[75%] self-end rounded-2xl rounded-br-none bg-blue-600 p-3 px-4">
-        <Text className="text-base text-white">{item.text}</Text>
+        <Text className="text-base text-white">{textToShow}</Text>
       </View>
     );
   };
