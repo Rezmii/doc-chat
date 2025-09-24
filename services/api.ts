@@ -1,6 +1,6 @@
 import { ApiChatMessage, AIResponse } from '../types';
 
-const API_URL = 'http://192.168.1.9:3001';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const postChatMessage = async (history: ApiChatMessage[]): Promise<AIResponse> => {
   const response = await fetch(`${API_URL}/api/ai/chat`, {
@@ -12,6 +12,10 @@ export const postChatMessage = async (history: ApiChatMessage[]): Promise<AIResp
   });
 
   if (!response.ok) {
+    if (response.status === 429) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Przekroczono limit zapytań.');
+    }
     throw new Error('Błąd serwera AI');
   }
 

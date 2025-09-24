@@ -1,9 +1,16 @@
+export interface AISummary {
+  summary: string;
+  possibleCauses: string[];
+  recommendedSpecialist: string;
+  questionsForDoctor: string[];
+}
+
 export interface Message {
   id: string;
+  sender: 'user' | 'ai';
+  isSummary?: boolean;
   text: string;
-  sender: 'user' | 'ai' 
-  isRecommendation?: boolean;
-  specializations?: string[];
+  summaryData?: AISummary;
 }
 
 export interface ApiChatMessage {
@@ -11,7 +18,6 @@ export interface ApiChatMessage {
   content: string;
 }
 
-export interface AIResponse {
-  reply: string;
-  specializations: string[];
-}
+export type AIResponse =
+  | { type: 'text'; content: string }
+  | { type: 'summary'; content: AISummary };

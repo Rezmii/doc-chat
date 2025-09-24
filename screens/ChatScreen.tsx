@@ -1,90 +1,82 @@
-// src/screens/ChatScreen.tsx
-
 import { Feather } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+// KROK 1: Poprawny import SafeAreaView
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { postChatMessage } from '../services/api';
 import { ApiChatMessage, Message } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import ChatInput from '../components/ChatInput';
+
+const OnboardingHeader = () => (
+  <View className="items-center px-6 text-center">
+    <Text className="text-7xl">🩺</Text>
+    <Text className="mt-6 text-center text-3xl font-bold text-gray-800">
+      Wstępna Analiza Objawów
+    </Text>
+    <Text className="mt-4 text-center text-base text-gray-600">
+      Opisz swój problem lub objawy, a ja zadam Ci kilka pytań, aby lepiej zrozumieć sytuację.
+    </Text>
+  </View>
+);
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 const ChatScreen = ({ navigation }: Props) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [conversationStarted, setConversationStarted] = useState(false);
+  const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
- const scrollToBottom = () => {
+  const scrollToBottom = () => {
     flatListRef.current?.scrollToEnd({ animated: true });
   };
 
-  useLayoutEffect(() => {
-    if (process.env.EXPO_PUBLIC_SKIP_AI_CHAT === 'true') {
-      console.log('--- TRYB DEWELOPERSKI: Pomijanie czatu AI ---');
-      setMessages([
-        {
-          id: 'dev-mode-1',
-          text: 'Tryb deweloperski jest włączony.',
-          sender: 'ai',
-        },
-      ]);
-      setIsTyping(false);
-    } else {
-      setTimeout(() => {
-        setMessages([
-          {
-            id: 'start-1',
-            text: 'Witaj! Jestem Twoim wirtualnym asystentem medycznym. Opisz proszę swoje objawy.',
-            sender: 'ai',
-          },
-        ]);
-        setIsTyping(false);
-      }, 1000);
+  const handleSend = async () => {
+    const textToSend = inputText.trim();
+    if (textToSend.length === 0) return;
+
+    if (!conversationStarted) {
+      setConversationStarted(true);
     }
-  }, []);
+    setInputText('');
+    Keyboard.dismiss();
 
-  const handleSend = async (text: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: text,
-      sender: 'user',
-    };
-
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    const userMessage: Message = { id: Date.now().toString(), text: textToSend, sender: 'user' };
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
     setIsTyping(true);
 
-    const apiHistory: ApiChatMessage[] = updatedMessages.map((msg) => ({
+    const newHistory: ApiChatMessage[] = [...messages, userMessage].map((msg) => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.text,
     }));
 
     try {
-      const data = await postChatMessage(apiHistory);
-
+      const data = await postChatMessage(newHistory);
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
         text: data.reply,
         sender: 'ai',
       };
-
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error('Błąd komunikacji z API:', error);
+      const errorMessageText =
+        error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.';
       const errorMessage: Message = {
         id: Date.now().toString() + '-error',
-        text: 'Przepraszam, mam problem z połączeniem. Spróbuj ponownie później.',
+        text: errorMessageText,
         sender: 'ai',
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -95,8 +87,7 @@ const ChatScreen = ({ navigation }: Props) => {
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.sender === 'user';
-
-     if (!isUser) {
+    if (!isUser) {
       return (
         <View className="mb-6 flex-row items-end self-start px-4">
           <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200">
@@ -108,7 +99,6 @@ const ChatScreen = ({ navigation }: Props) => {
         </View>
       );
     }
-
     return (
       <View className="mb-6 max-w-[75%] self-end rounded-2xl rounded-br-none bg-blue-600 p-3 px-4">
         <Text className="text-base text-white">{item.text}</Text>
@@ -132,58 +122,42 @@ const ChatScreen = ({ navigation }: Props) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -100}>
-        <View className="flex-row items-center border-b border-gray-200 p-3">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
-            <Feather name="chevron-left" size={28} color="#334155" />
-          </TouchableOpacity>
-          <Text className="mr-10 flex-1 text-center text-xl font-bold text-gray-800">
-            Asystent AI
-          </Text>
-        </View>
-
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          className="flex-1 px-2 pt-4"
-          onContentSizeChange={scrollToBottom}
-          ListFooterComponent={isTyping ? <TypingIndicator /> : null}
-        />
-
-        <ChatInput onSend={handleSend} />
+        keyboardVerticalOffset={100}>
+        {conversationStarted ? (
+          <>
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item.id}
+              className="flex-1 px-2 pt-4"
+              onContentSizeChange={scrollToBottom}
+              ListFooterComponent={isTyping ? <TypingIndicator /> : null}
+            />
+            <ChatInput
+              variant="chat"
+              inputText={inputText}
+              setInputText={setInputText}
+              onSend={handleSend}
+            />
+          </>
+        ) : (
+          <View className="flex-1 justify-center p-4">
+            <OnboardingHeader />
+            <ChatInput
+              variant="onboarding"
+              inputText={inputText}
+              setInputText={setInputText}
+              onSend={handleSend}
+            />
+            <Text className="mt-4 text-center text-xs text-gray-400">
+              Pamiętaj, AI to tylko wstępna sugestia. Ostateczną diagnozę może postawić wyłącznie
+              lekarz.
+            </Text>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-};
-
-const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
-  const [inputText, setInputText] = useState('');
-  const handlePress = () => {
-    if (inputText.trim().length > 0) {
-      onSend(inputText);
-      setInputText('');
-      Keyboard.dismiss();
-    }
-  };
-
-   return (
-    <View className="flex-row items-center space-x-2 border-t border-gray-200 bg-white p-2">
-      <TextInput
-        value={inputText}
-        onChangeText={setInputText}
-        onSubmitEditing={handlePress}
-        editable={true}
-        className="mr-2 h-11 flex-1 rounded-full border border-gray-300 bg-gray-100 px-4 text-base"
-        placeholder="Napisz wiadomość..."
-      />
-      <TouchableOpacity
-        onPress={handlePress}
-        className="h-11 w-11 items-center justify-center rounded-full bg-blue-600 active:bg-blue-700">
-        <Feather name="send" size={22} color="white" />
-      </TouchableOpacity>
-    </View>
   );
 };
 
