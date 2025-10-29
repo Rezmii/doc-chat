@@ -29,13 +29,15 @@ const ChatScreen = ({ navigation }: Props) => {
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
+  const [isLimitReached, setIsLimitReached] = useState(false);
+
   const scrollToBottom = () => {
     flatListRef.current?.scrollToEnd({ animated: true });
   };
 
   const handleSend = async () => {
     const textToSend = inputText.trim();
-    if (textToSend.length === 0) return;
+    if (textToSend.length === 0 || isLimitReached) return;
 
     if (!conversationStarted) {
       setConversationStarted(true);
@@ -57,6 +59,8 @@ const ChatScreen = ({ navigation }: Props) => {
     }));
 
     try {
+      if (isLimitReached) setIsLimitReached(false);
+
       const data: AIResponse = await postChatMessage(newHistory);
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
@@ -71,12 +75,17 @@ const ChatScreen = ({ navigation }: Props) => {
       console.error('Błąd w handleSend:', error);
       const errorMessageText =
         error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd. Spróbuj ponownie.';
-      const errorMessage: Message = {
-        id: Date.now().toString() + '-error',
-        sender: 'ai',
-        content: { type: 'text', text: errorMessageText },
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+
+      if (errorMessageText.includes('Przekroczono limit')) {
+        setIsLimitReached(true);
+      } else {
+        const errorMessage: Message = {
+          id: Date.now().toString() + '-error',
+          sender: 'ai',
+          content: { type: 'text', text: errorMessageText },
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -142,6 +151,7 @@ const ChatScreen = ({ navigation }: Props) => {
               inputText={inputText}
               setInputText={setInputText}
               onSend={handleSend}
+              disabled={isLimitReached}
             />
           </>
         ) : (
@@ -152,6 +162,7 @@ const ChatScreen = ({ navigation }: Props) => {
               inputText={inputText}
               setInputText={setInputText}
               onSend={handleSend}
+              disabled={false}
             />
             <Text className="mt-4 text-center text-xs text-gray-400">
               Pamiętaj, AI to tylko wstępna sugestia. Ostateczną diagnozę może postawić wyłącznie
