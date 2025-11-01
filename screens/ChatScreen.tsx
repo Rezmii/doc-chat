@@ -3,10 +3,27 @@ import React, { useRef, useState } from 'react';
 import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { postChatMessage } from '../services/api';
-import { AIResponse, ApiChatMessage, Message } from '../types';
+import { AISummary, AIResponse, ApiChatMessage, Message } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import ChatInput from '../components/ChatInput';
 import SummaryCard from '../components/SummaryCard';
+
+const MOCK_SUMMARY_DATA: AISummary = {
+  summary:
+    'Użytkownik zgłasza silny, pulsujący ból głowy w okolicy skroni, trwający od 2 dni. Objawom towarzyszą nudności i nadwrażliwość na światło.',
+  possibleCauses: [
+    'Migrena z aurą',
+    'Napięciowy ból głowy',
+    'Problemy z ciśnieniem (nadciśnienie)',
+  ],
+  recommendedSpecialist: 'Neurolog lub Lekarz rodzinny',
+  questionsForDoctor: [
+    'Czy to może być migrena?',
+    'Jakie badania diagnostyczne powinienem wykonać?',
+    'Jakie leki przeciwbólowe mogę bezpiecznie stosować?',
+    'Czy mój styl życia (stres, dieta) może na to wpływać?',
+  ],
+};
 
 const OnboardingHeader = () => (
   <View className="items-center px-6 text-center">
@@ -44,6 +61,19 @@ const ChatScreen = ({ navigation }: Props) => {
     }
     setInputText('');
     Keyboard.dismiss();
+
+    if (textToSend === '/testsummary') {
+      const summaryMessage: Message = {
+        id: Date.now().toString(),
+        sender: 'ai',
+        content: {
+          type: 'summary',
+          data: MOCK_SUMMARY_DATA,
+        },
+      };
+      setMessages((prev) => [...prev, summaryMessage]);
+      return; // Zakończ funkcję tutaj
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -93,7 +123,7 @@ const ChatScreen = ({ navigation }: Props) => {
 
   const renderMessage = ({ item }: { item: Message }) => {
     if (item.sender === 'ai' && item.content.type === 'summary') {
-      return <SummaryCard summary={item.content.data} />;
+      return <SummaryCard summary={item.content.data} messageId={item.id} listRef={flatListRef} />;
     }
 
     const textToShow = item.content.type === 'text' ? item.content.text : '[Podsumowanie]';
@@ -133,8 +163,7 @@ const ChatScreen = ({ navigation }: Props) => {
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-        keyboardVerticalOffset={100}>
+        className="flex-1">
         {conversationStarted ? (
           <>
             <FlatList
