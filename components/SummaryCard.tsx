@@ -10,6 +10,7 @@ import {
   FlatList,
 } from 'react-native';
 import { AISummary } from '../types';
+import ExportSummaryButton from './ExportSummaryButton';
 
 interface SummaryCardProps {
   summary: AISummary;
@@ -147,9 +148,17 @@ const FeedbackWidget = ({ messageId, listRef }: FeedbackWidgetProps) => {
 const SummaryCard = ({ summary, messageId, listRef }: SummaryCardProps) => {
   return (
     <View className="mb-6 max-w-[95%] self-center rounded-2xl bg-slate-100 p-4 shadow-sm">
-      <View className="flex-row items-center border-b border-slate-200 pb-3">
-        <Feather name="check-circle" size={24} color="#16a34a" />
-        <Text className="ml-3 text-xl font-bold text-gray-800">Podsumowanie Analizy</Text>
+      <View className="flex-row items-center justify-between border-b border-slate-200 pb-3">
+        <View className="flex-1 flex-row items-center">
+          <Feather name="check-circle" size={24} color="#16a34a" />
+          <Text
+            className="ml-3 text-xl font-bold text-gray-800"
+            numberOfLines={1}
+            ellipsizeMode="tail">
+            Podsumowanie Analizy
+          </Text>
+        </View>
+        <ExportSummaryButton summary={summary} />
       </View>
 
       <Section title="Twoje Objawy" icon="activity">
