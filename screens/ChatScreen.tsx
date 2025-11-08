@@ -1,12 +1,39 @@
+import { Feather } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useRef, useState } from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import {
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  View,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { postChatMessage } from '../services/api';
-import { AISummary, AIResponse, ApiChatMessage, Message } from '../types';
-import { RootStackParamList } from '../navigation/AppNavigator';
 import ChatInput from '../components/ChatInput';
 import SummaryCard from '../components/SummaryCard';
+import { postChatMessage } from '../services/api';
+import { AISummary, ApiChatMessage, Message, AIResponse } from '../types';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+const aiIcon = require('../assets/onboard_icon.png');
+
+// ZMIANA: Zaktualizowany komponent OnboardingHeader
+const OnboardingHeader = () => (
+  <View className="items-center px-6 text-center">
+    {/* 3. ZMIANA: Używamy nowej ikony */}
+    <View className="h-24 w-24 items-center justify-center rounded-2xl bg-blue-100">
+      <Image source={aiIcon} className="h-20 w-20" />
+    </View>
+    <Text className="mt-6 text-center text-3xl font-bold text-gray-900">
+      Wstępna Analiza Objawów
+    </Text>
+    <Text className="mt-4 text-center text-base text-gray-700">
+      Opisz swój problem lub objawy, a ja zadam Ci kilka pytań, aby lepiej zrozumieć sytuację.
+    </Text>
+  </View>
+);
 
 const MOCK_SUMMARY_DATA: AISummary = {
   summary:
@@ -25,18 +52,6 @@ const MOCK_SUMMARY_DATA: AISummary = {
   ],
 };
 
-const OnboardingHeader = () => (
-  <View className="items-center px-6 text-center">
-    <Text className="text-7xl">🩺</Text>
-    <Text className="mt-6 text-center text-3xl font-bold text-gray-800">
-      Wstępna Analiza Objawów
-    </Text>
-    <Text className="mt-4 text-center text-base text-gray-600">
-      Opisz swój problem lub objawy, a ja zadam Ci kilka pytań, aby lepiej zrozumieć sytuację.
-    </Text>
-  </View>
-);
-
 type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 const ChatScreen = ({ navigation }: Props) => {
@@ -44,9 +59,8 @@ const ChatScreen = ({ navigation }: Props) => {
   const [isTyping, setIsTyping] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
   const [inputText, setInputText] = useState('');
-  const flatListRef = useRef<FlatList>(null);
-
   const [isLimitReached, setIsLimitReached] = useState(false);
+  const flatListRef = useRef<FlatList<any> | null>(null);
 
   const scrollToBottom = () => {
     flatListRef.current?.scrollToEnd({ animated: true });
@@ -72,7 +86,7 @@ const ChatScreen = ({ navigation }: Props) => {
         },
       };
       setMessages((prev) => [...prev, summaryMessage]);
-      return; // Zakończ funkcję tutaj
+      return;
     }
 
     const userMessage: Message = {
@@ -92,6 +106,7 @@ const ChatScreen = ({ navigation }: Props) => {
       if (isLimitReached) setIsLimitReached(false);
 
       const data: AIResponse = await postChatMessage(newHistory);
+
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
         sender: 'ai',
@@ -131,11 +146,13 @@ const ChatScreen = ({ navigation }: Props) => {
     if (item.sender === 'ai') {
       return (
         <View className="mb-6 flex-row items-end self-start px-4">
-          <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200">
-            <Text className="text-lg">🤖</Text>
+          {/* ZMIANA: Nowy avatar AI */}
+          <View className="mr-2 h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+            <Image source={aiIcon} className="h-8 w-8" style={{ tintColor: '#2563eb' }} />
           </View>
-          <View className="max-w-[75%] rounded-2xl rounded-bl-none bg-gray-200 p-3">
-            <Text className="text-base text-gray-800">{textToShow}</Text>
+          {/* ZMIANA: Nowy styl dymka AI */}
+          <View className="max-w-[75%] rounded-2xl rounded-bl-none bg-slate-100 p-3">
+            <Text className="text-base text-slate-800">{textToShow}</Text>
           </View>
         </View>
       );
@@ -150,20 +167,23 @@ const ChatScreen = ({ navigation }: Props) => {
 
   const TypingIndicator = () => (
     <View className="mb-6 flex-row items-end self-start px-4">
-      <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200">
-        <Text className="text-lg">🤖</Text>
+      {/* ZMIANA: Awatar AI */}
+      <View className="mr-2 h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+        <Image source={aiIcon} className="h-8 w-8" style={{ tintColor: '#2563eb' }} />
       </View>
-      <View className="max-w-[75%] rounded-2xl rounded-bl-none bg-gray-200 p-3">
+      {/* ZMIANA: rounded-2xl -> rounded-xl */}
+      <View className="max-w-[75%] rounded-xl rounded-bl-none bg-gray-200 p-3">
         <Text className="text-base font-medium italic text-gray-500">Asystent pisze...</Text>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="bg-brand-background flex-1">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1">
+        className="flex-1"
+        keyboardVerticalOffset={0}>
         {conversationStarted ? (
           <>
             <FlatList
@@ -171,10 +191,11 @@ const ChatScreen = ({ navigation }: Props) => {
               data={messages}
               renderItem={renderMessage}
               keyExtractor={(item) => item.id}
-              className="flex-1 px-2 pt-4"
+              className="flex-1 bg-white px-2 pt-4" // Tło wraca na białe dla czystości
               onContentSizeChange={scrollToBottom}
               ListFooterComponent={isTyping ? <TypingIndicator /> : null}
             />
+
             <ChatInput
               variant="chat"
               inputText={inputText}
@@ -184,7 +205,8 @@ const ChatScreen = ({ navigation }: Props) => {
             />
           </>
         ) : (
-          <View className="flex-1 justify-center p-4">
+          // ZMIANA: justify-center -> justify-start, pt-24, p-4 -> p-6
+          <View className="flex-1 justify-start p-6 pt-24">
             <OnboardingHeader />
             <ChatInput
               variant="onboarding"
@@ -193,13 +215,18 @@ const ChatScreen = ({ navigation }: Props) => {
               onSend={handleSend}
               disabled={false}
             />
-            <Text className="mt-4 text-center text-xs text-gray-400">
+            {/* ZMIANA: Lepsza czytelność i marginesy dla disclaimera */}
+            <Text className="mt-6 px-4 text-center text-sm text-gray-600">
               Pamiętaj, AI to tylko wstępna sugestia. Ostateczną diagnozę może postawić wyłącznie
               lekarz.
             </Text>
           </View>
         )}
       </KeyboardAvoidingView>
+      {/* Przycisk Feedbacku zostaje usunięty, ponieważ jest teraz częścią SummaryCard,
+        która jest znacznie lepszym miejscem na kontekstową opinię.
+      */}
+      {/* <FeedbackButton /> */}
     </SafeAreaView>
   );
 };
