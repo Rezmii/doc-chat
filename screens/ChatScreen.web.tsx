@@ -64,14 +64,13 @@ const AppFooter = ({ onReportPress }: { onReportPress: () => void }) => {
           </Text>
         </TouchableOpacity>
         <View className="my-4 h-px w-full max-w-lg bg-slate-200" />
-        <Text className="text-center text-xs text-gray-400">
+        {/* <Text className="text-center text-xs text-gray-400">
           © 2025 Firma. Wszelkie prawa zastrzeżone.
         </Text>
         <View className="mt-2 flex-row gap-4">
-          {/* Na razie linki prowadzą donikąd, ale wyglądają profesjonalnie */}
           <Text className="text-xs text-gray-500 hover:text-gray-800">Regulamin</Text>
           <Text className="text-xs text-gray-500 hover:text-gray-800">Polityka Prywatności</Text>
-        </View>
+        </View> */}
       </View>
     </View>
   );
