@@ -7,6 +7,9 @@ interface ChatInputProps {
   onSend: () => void;
   variant: 'onboarding' | 'chat';
   disabled?: boolean;
+  // =========CHANGE=========
+  // Dodajemy opcjonalny prop `className`
+  className?: string;
 }
 
 const ChatInput = ({
@@ -15,10 +18,15 @@ const ChatInput = ({
   onSend,
   variant,
   disabled = false,
+  // =========CHANGE=========
+  // Odbieramy `className` i domyślnie ustawiamy na pusty string
+  className = '',
 }: ChatInputProps) => {
   if (variant === 'chat' && disabled) {
     return (
-      <View className="items-center border-t border-gray-200 bg-white p-6">
+      // =========CHANGE=========
+      // Dodajemy {className} do głównego View
+      <View className={`items-center border-t border-gray-200 bg-white p-6 ${className}`}>
         <View className="flex-row items-center justify-center rounded-full bg-red-100 p-3">
           <Feather name="alert-octagon" size={24} color="#dc2626" />
         </View>
@@ -36,14 +44,15 @@ const ChatInput = ({
   // Wariant dla ekranu startowego (duży input i przycisk)
   if (variant === 'onboarding') {
     return (
-      <View className="w-full">
+      // =========CHANGE=========
+      // Dodajemy {className} do głównego View
+      <View className={`w-full ${className}`}>
         <TextInput
           value={inputText}
           onChangeText={setInputText}
           placeholder="Zacznij tutaj, np. 'Od wczoraj mam silny ból gardła...'"
           multiline
           editable={!disabled}
-          // ZMIANA: rounded-2xl -> rounded-xl, bg-gray-100 -> bg-white
           className={`mt-8 h-24 rounded-xl border border-gray-300 p-4 text-base leading-6 ${
             disabled ? 'bg-gray-200 text-gray-400' : 'bg-white'
           }`}
@@ -51,11 +60,9 @@ const ChatInput = ({
         <TouchableOpacity
           onPress={onSend}
           disabled={disabled}
-          // ZMIANA: Usunięto h-14, dodano py-4, rounded-2xl -> rounded-xl
           className={`mt-4 w-full items-center justify-center rounded-xl py-4 shadow-lg shadow-blue-500/30 ${
             disabled ? 'bg-blue-300' : 'bg-blue-600 active:bg-blue-700'
           }`}>
-          {/* ZMIANA: text-xl font-bold -> text-lg font-semibold */}
           <Text className="text-lg font-semibold text-white">Rozpocznij analizę</Text>
         </TouchableOpacity>
       </View>
@@ -64,13 +71,15 @@ const ChatInput = ({
 
   // Wariant dla aktywnej rozmowy (mały, przyklejony do dołu)
   return (
-    <View className="flex-row items-center gap-3 border-t border-gray-200 bg-white p-3">
+    // =========CHANGE=========
+    // Dodajemy {className} do głównego View
+    <View
+      className={`flex-row items-center gap-3 border-t border-gray-200 bg-white p-3 ${className}`}>
       <TextInput
         value={inputText}
         onChangeText={setInputText}
         onSubmitEditing={onSend}
         editable={!disabled}
-        // ZMIANA: usunięto mr-2, border, zmieniono tło na bg-slate-100, px-5
         className={`h-11 flex-1 rounded-full bg-slate-100 px-5 text-base ${
           disabled ? 'bg-gray-200 text-gray-400' : 'bg-slate-100'
         }`}

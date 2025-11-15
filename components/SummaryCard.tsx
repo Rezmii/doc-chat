@@ -18,7 +18,7 @@ interface SummaryCardProps {
   listRef: React.RefObject<FlatList<any> | null>;
 }
 
-const WEB3FORMS_ACCESS_KEY = 'TWOJ_WEB3FORMS_ACCESS_KEY';
+const WEB3FORMS_ACCESS_KEY = process.env.EXPO_PUBLIC_WEB3FORMS_ACCESS_KEY;
 const WEB3FORMS_URL = 'https://api.web3forms.com/submit';
 
 // ZMIANA: Komponent Section przebudowany zgodnie ze specyfikacją
