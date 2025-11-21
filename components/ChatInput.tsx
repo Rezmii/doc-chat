@@ -1,5 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import { TextInput, TouchableOpacity, View, Text } from 'react-native';
+import { View, TextInput, TouchableOpacity } from 'react-native';
+import { Button } from './ui/button';
+import { Text } from './ui/text';
+import { cn } from '../lib/utils';
 
 interface ChatInputProps {
   inputText: string;
@@ -7,8 +10,6 @@ interface ChatInputProps {
   onSend: () => void;
   variant: 'onboarding' | 'chat';
   disabled?: boolean;
-  // =========CHANGE=========
-  // Dodajemy opcjonalny prop `className`
   className?: string;
 }
 
@@ -18,81 +19,98 @@ const ChatInput = ({
   onSend,
   variant,
   disabled = false,
-  // =========CHANGE=========
-  // Odbieramy `className` i domyślnie ustawiamy na pusty string
-  className = '',
+  className,
 }: ChatInputProps) => {
+  // Wariant 1: Limit (Alert) - bez zmian logicznych, tylko styl RNR
   if (variant === 'chat' && disabled) {
     return (
-      // =========CHANGE=========
-      // Dodajemy {className} do głównego View
-      <View className={`items-center border-t border-gray-200 bg-white p-6 ${className}`}>
-        <View className="flex-row items-center justify-center rounded-full bg-red-100 p-3">
-          <Feather name="alert-octagon" size={24} color="#dc2626" />
+      <View
+        className={cn(
+          'mx-4 mb-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4',
+          className
+        )}>
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
+            <Feather name="alert-octagon" size={20} className="text-destructive" color="#ef4444" />
+          </View>
+          <View className="flex-1">
+            <Text className="font-semibold text-destructive">Limit osiągnięty</Text>
+            <Text className="text-xs text-muted-foreground">
+              Wykorzystałeś darmowy limit na ten miesiąc.
+            </Text>
+          </View>
         </View>
-        <Text className="mt-3 text-lg font-semibold text-gray-800">Osiągnięto darmowy limit</Text>
-        <Text className="mt-1 px-4 text-center text-base text-gray-500">
-          Wykorzystałeś/aś 5 darmowych analiz w tym miesiącu.
-        </Text>
-        <Text className="mt-2 text-center text-sm text-gray-400">
-          Limit odnowi się automatycznie za 30 dni.
-        </Text>
       </View>
     );
   }
 
-  // Wariant dla ekranu startowego (duży input i przycisk)
+  // Wariant 2: Onboarding (Duży)
   if (variant === 'onboarding') {
     return (
-      // =========CHANGE=========
-      // Dodajemy {className} do głównego View
-      <View className={`w-full ${className}`}>
+      <View className={cn('w-full gap-4', className)}>
+        <View className="relative">
+          <TextInput
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Opisz tutaj swoje objawy..."
+            multiline
+            editable={!disabled}
+            className={cn(
+              'min-h-[140px] w-full rounded-xl border border-input bg-background px-4 py-3 align-top text-base leading-relaxed placeholder:text-muted-foreground web:ring-offset-background web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2',
+              disabled && 'opacity-50'
+            )}
+            style={{ textAlignVertical: 'top' }}
+          />
+          {/* Ikona wewnątrz inputu (opcjonalnie) */}
+          <View className="absolute bottom-3 right-3">
+            <Feather name="edit-2" size={14} color="#94a3b8" />
+          </View>
+        </View>
+
+        <Button
+          onPress={onSend}
+          disabled={disabled || !inputText.trim()}
+          size="lg"
+          className="h-12 w-full rounded-xl bg-primary shadow-sm transition-transform active:scale-[0.99]">
+          <Text className="text-base font-semibold text-primary-foreground">
+            Rozpocznij Analizę
+          </Text>
+          <Feather name="arrow-right" size={18} color="white" className="ml-2" />
+        </Button>
+      </View>
+    );
+  }
+
+  // Wariant 3: Active Chat (Professional Toolbar)
+  return (
+    <View className={cn('w-full px-4 pb-4 pt-2', className)}>
+      {/* ZMIANA: items-end -> items-center (żeby przycisk był idealnie w linii z tekstem) */}
+      <View className="flex-row items-center gap-2 rounded-2xl border border-input bg-background p-2 shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/30">
+        {/* ZMIANA: Usunięto przycisk spinacza (TouchableOpacity) */}
+
         <TextInput
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Zacznij tutaj, np. 'Od wczoraj mam silny ból gardła...'"
-          multiline
+          onSubmitEditing={onSend}
           editable={!disabled}
-          className={`mt-8 h-24 rounded-xl border border-gray-300 p-4 text-base leading-6 ${
-            disabled ? 'bg-gray-200 text-gray-400' : 'bg-white'
-          }`}
+          multiline
+          placeholder={disabled ? 'Limit wyczerpany...' : 'Wpisz wiadomość...'}
+          className="max-h-[120px] min-h-[40px] flex-1 py-2 text-base text-foreground placeholder:text-muted-foreground web:outline-none"
+          // textAlignVertical: 'center' zapewnia, że tekst jest na środku inputu (Android)
+          style={{ textAlignVertical: 'center' }}
         />
-        <TouchableOpacity
-          onPress={onSend}
-          disabled={disabled}
-          className={`mt-4 w-full items-center justify-center rounded-xl py-4 shadow-lg shadow-blue-500/30 ${
-            disabled ? 'bg-blue-300' : 'bg-blue-600 active:bg-blue-700'
-          }`}>
-          <Text className="text-lg font-semibold text-white">Rozpocznij analizę</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
-  // Wariant dla aktywnej rozmowy (mały, przyklejony do dołu)
-  return (
-    // =========CHANGE=========
-    // Dodajemy {className} do głównego View
-    <View
-      className={`flex-row items-center gap-3 border-t border-gray-200 bg-white p-3 ${className}`}>
-      <TextInput
-        value={inputText}
-        onChangeText={setInputText}
-        onSubmitEditing={onSend}
-        editable={!disabled}
-        className={`h-11 flex-1 rounded-full bg-slate-100 px-5 text-base ${
-          disabled ? 'bg-gray-200 text-gray-400' : 'bg-slate-100'
-        }`}
-        placeholder={disabled ? 'Osiągnięto limit...' : 'Napisz wiadomość...'}
-      />
-      <TouchableOpacity
-        onPress={onSend}
-        disabled={disabled}
-        className={`h-11 w-11 items-center justify-center rounded-full ${
-          disabled ? 'bg-gray-400' : 'bg-blue-600'
-        }`}>
-        <Feather name="send" size={22} color="white" />
-      </TouchableOpacity>
+        <Button
+          onPress={onSend}
+          disabled={disabled || !inputText.trim()}
+          size="icon"
+          className="h-10 w-10 rounded-xl bg-primary shadow-sm hover:bg-primary/90">
+          <Feather name="arrow-up" size={20} color="white" />
+        </Button>
+      </View>
+      <Text className="mt-2 text-center text-[10px] text-muted-foreground">
+        DocChat może popełniać błędy. Informacje mają charakter edukacyjny.
+      </Text>
     </View>
   );
 };

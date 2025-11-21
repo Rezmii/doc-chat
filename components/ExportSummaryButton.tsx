@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
-import { Share, TouchableOpacity, Alert, Platform } from 'react-native';
+import { Share, Alert } from 'react-native';
 import { AISummary } from '../types';
+import { Button } from './ui/button'; // Używamy komponentu RNR
 
 /**
  * Konwertuje obiekt podsumowania na czytelny, sformatowany tekst
@@ -67,11 +68,13 @@ const ExportSummaryButton = ({ summary }: { summary: AISummary }) => {
   };
 
   return (
-    <TouchableOpacity
-      onPress={onShare}
-      className="h-10 w-10 items-center justify-center rounded-full active:bg-gray-200">
-      <Feather name="share-2" size={22} color="#6b7280" />
-    </TouchableOpacity>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-10 w-10 rounded-full hover:bg-secondary active:bg-secondary/80"
+      onPress={onShare}>
+      <Feather name="share-2" size={20} className="text-muted-foreground" />
+    </Button>
   );
 };
 

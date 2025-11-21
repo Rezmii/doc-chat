@@ -1,54 +1,55 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  FlatList,
-} from 'react-native';
+import { View, FlatList, ActivityIndicator } from 'react-native';
 import { AISummary } from '../types';
 import ExportSummaryButton from './ExportSummaryButton';
 
-interface SummaryCardProps {
-  summary: AISummary;
-  messageId: string;
-  listRef: React.RefObject<FlatList<any> | null>;
-}
+// RNR Components
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
+import { Text } from './ui/text';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Input } from './ui/input'; // Przywracamy Input
+import { Separator } from './ui/separator';
+import { cn } from '../lib/utils';
 
 const WEB3FORMS_ACCESS_KEY = process.env.EXPO_PUBLIC_WEB3FORMS_ACCESS_KEY;
 const WEB3FORMS_URL = 'https://api.web3forms.com/submit';
 
-// ZMIANA: Komponent Section przebudowany zgodnie ze specyfikacją
+interface SummaryCardProps {
+  summary: AISummary;
+  messageId: string;
+  listRef?: React.RefObject<FlatList<any> | null>;
+  className?: string;
+}
+
 const Section = ({
   title,
   icon,
   children,
+  className,
 }: {
   title: string;
   icon: any;
   children: React.ReactNode;
+  className?: string;
 }) => (
-  // ZMIANA: Zwiększony odstęp mt-6
-  <View className="mt-6">
-    {/* ZMIANA: opacity-90, ikona 16px, kolor #374151 */}
-    <View className="flex-row items-center opacity-90">
-      <Feather name={icon} size={16} color="#374151" />
-      {/* ZMIANA: Styl nagłówka raportu */}
-      <Text className="ml-2 text-sm font-semibold uppercase tracking-wider text-gray-700">
-        {title}
-      </Text>
+  <View className={cn('flex-row items-start gap-4', className)}>
+    <View className="mt-1 h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+      <Feather name={icon} size={16} className="text-primary" color="#2563eb" />
     </View>
-    {/* ZMIANA: Usunięto tło, padding i zaokrąglenie. Dodano mt-3 */}
-    <View className="mt-3">{children}</View>
+    <View className="flex-1 gap-1">
+      <Text className="text-base font-semibold text-foreground">{title}</Text>
+      <View className="text-sm text-muted-foreground">{children}</View>
+    </View>
   </View>
 );
 
+// =========CHANGE=========
+// Zaktualizowany FeedbackWidget z pełną logiką (komentarz przy dislike)
 interface FeedbackWidgetProps {
   messageId: string;
-  listRef: React.RefObject<FlatList<any> | null>;
+  listRef?: React.RefObject<FlatList<any> | null>;
 }
 
 const FeedbackWidget = ({ messageId, listRef }: FeedbackWidgetProps) => {
@@ -56,171 +57,167 @@ const FeedbackWidget = ({ messageId, listRef }: FeedbackWidgetProps) => {
   const [state, setState] = useState<FeedbackState>('idle');
   const [comment, setComment] = useState('');
 
-  const sendFeedback = async (rating: 'like' | 'dislike', comment: string = '') => {
+  const sendFeedback = async (rating: 'like' | 'dislike', feedbackComment: string = '') => {
     setState('submitting');
     try {
-      const payload = {
-        access_key: WEB3FORMS_ACCESS_KEY,
-        subject: 'Nowa opinia (AI Health Assistant)',
-        messageId,
-        rating,
-        comment,
-      };
-      const response = await fetch(WEB3FORMS_URL, {
+      await fetch(WEB3FORMS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: 'Ocena raportu (AI Health Assistant)',
+          messageId,
+          rating,
+          comment: feedbackComment,
+        }),
       });
-      const resData = await response.json();
-      if (!resData.success) throw new Error(resData.message);
       setState('submitted');
     } catch (error) {
-      Alert.alert('Błąd', 'Wystąpił błąd podczas wysyłania opinii.');
+      console.error(error);
+      // W razie błędu wróć do poprzedniego stanu
       setState(rating === 'like' ? 'idle' : 'disliked');
     }
   };
 
+  // 1. Ładowanie
   if (state === 'submitting') {
     return (
-      <View className="h-28 items-center justify-center">
-        <ActivityIndicator size="small" color="#6b7280" />
+      <View className="items-center justify-center gap-2 py-4">
+        <ActivityIndicator size="small" color="#64748b" />
+        <Text className="text-xs text-muted-foreground">Wysyłanie...</Text>
       </View>
     );
   }
 
-  // ZMIANA: Stan "Submitted" ze stylem
+  // 2. Sukces
   if (state === 'submitted') {
     return (
-      <View className="flex-row items-center justify-center py-4">
-        <Feather name="check-circle" size={20} color="#16a34a" />
-        <Text className="ml-2 text-base font-medium text-gray-700">
-          Dziękujemy za Twoją opinię!
-        </Text>
+      <View className="w-full flex-row items-center justify-center gap-2 rounded-lg bg-green-50/50 py-4">
+        <Feather name="check-circle" size={16} color="#16a34a" />
+        <Text className="text-sm font-medium text-green-700">Dziękujemy za opinię!</Text>
       </View>
     );
   }
 
-  // Stan "Disliked"
+  // 3. Stan "Disliked" - pytamy o powód
   if (state === 'disliked') {
     return (
-      <View className="w-full">
-        <Text className="text-base font-semibold text-gray-700">Co możemy poprawić?</Text>
-        <TextInput
+      <View className="w-full gap-3 py-2 animate-in fade-in slide-in-from-top-2">
+        <Text className="text-sm font-medium text-foreground">Co możemy poprawić?</Text>
+        <Input
           value={comment}
           onChangeText={setComment}
           placeholder="Twoja opinia..."
           multiline
-          autoFocus
+          className="min-h-[80px] bg-background" // RNR style
+          textAlignVertical="top"
           onFocus={() => {
+            // Scrollujemy listę, żeby klawiatura nie zasłoniła pola (głównie mobile)
             setTimeout(() => {
-              listRef.current?.scrollToEnd({ animated: true });
+              listRef?.current?.scrollToEnd({ animated: true });
             }, 100);
           }}
-          // ZMIANA: rounded-xl
-          className="mt-2 h-20 w-full rounded-xl border border-gray-300 bg-white p-3 align-text-top text-base"
         />
-        <TouchableOpacity
-          onPress={() => sendFeedback('dislike', comment)}
-          // ZMIANA: rounded-xl, bg-blue-600
-          className="mt-2 h-11 w-full items-center justify-center rounded-xl bg-blue-600 active:bg-blue-700">
-          <Text className="font-semibold text-white">Wyślij opinię</Text>
-        </TouchableOpacity>
+        <View className="flex-row justify-end gap-2">
+          <Button variant="ghost" size="sm" onPress={() => setState('idle')}>
+            <Text>Anuluj</Text>
+          </Button>
+          <Button size="sm" className="bg-primary" onPress={() => sendFeedback('dislike', comment)}>
+            <Text className="text-primary-foreground">Wyślij</Text>
+          </Button>
+        </View>
       </View>
     );
   }
 
-  // Stan 'idle'
+  // 4. Stan 'idle' - Pytanie + Przyciski
   return (
-    // ZMIANA: Usunięto stałą wysokość
-    <View className="items-center justify-center py-4">
-      <Text className="text-base text-gray-600">Czy to było pomocne?</Text>
-      <View className="mt-3 w-full flex-row justify-center gap-4">
-        {/* ZMIANA: Mniejsze przyciski, rounded-xl */}
-        <TouchableOpacity
-          onPress={() => sendFeedback('like')}
-          className="h-12 w-16 items-center justify-center rounded-xl bg-slate-200 active:bg-green-200">
-          <Feather name="thumbs-up" size={20} color="#34d399" />
-        </TouchableOpacity>
-        {/* ZMIANA: Mniejsze przyciski, rounded-xl */}
-        <TouchableOpacity
-          onPress={() => setState('disliked')}
-          className="h-12 w-16 items-center justify-center rounded-xl bg-slate-200 active:bg-red-200">
-          <Feather name="thumbs-down" size={20} color="#f87171" />
-        </TouchableOpacity>
+    <View className="w-full items-center gap-3">
+      <Text className="text-xs text-muted-foreground">Czy ta analiza była pomocna?</Text>
+      <View className="flex-row gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full hover:border-green-200 hover:bg-green-50 active:bg-green-100"
+          onPress={() => sendFeedback('like')}>
+          <Feather
+            name="thumbs-up"
+            size={16}
+            className="text-muted-foreground group-hover:text-green-600"
+          />
+        </Button>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-full hover:border-red-200 hover:bg-red-50 active:bg-red-100"
+          onPress={() => setState('disliked')}>
+          <Feather
+            name="thumbs-down"
+            size={16}
+            className="text-muted-foreground group-hover:text-red-600"
+          />
+        </Button>
       </View>
     </View>
   );
 };
 
-const SummaryCard = ({ summary, messageId, listRef }: SummaryCardProps) => {
+const SummaryCard = ({ summary, messageId, listRef, className }: SummaryCardProps) => {
   return (
-    // ZMIANA: Nowe style głównej karty
-    <View className="mb-6 max-w-[95%] self-center rounded-xl bg-slate-50 p-5 shadow-lg">
-      <View className="flex-row items-center justify-between border-b border-slate-200 pb-3">
-        <View className="flex-1 flex-row items-center">
-          <Feather name="check-circle" size={24} color="#16a34a" />
-          {/* ZMIANA: Styl nagłówka */}
-          <Text
-            className="ml-3 text-xl font-semibold text-gray-900"
-            numberOfLines={1}
-            ellipsizeMode="tail">
-            Podsumowanie Analizy
+    <Card className={cn('w-full bg-card/80 shadow-sm backdrop-blur-sm', className)}>
+      <CardHeader className="flex-row items-start justify-between border-b border-border/40 pb-6">
+        <View>
+          <CardTitle className="text-2xl font-bold tracking-tight">Podsumowanie</CardTitle>
+          <Text className="mt-1 text-sm text-muted-foreground">
+            Wygenerowano przez AI Assistant
           </Text>
         </View>
         <ExportSummaryButton summary={summary} />
-      </View>
+      </CardHeader>
 
-      <Section title="Twoje Objawy" icon="activity">
-        {/* ZMIANA: Styl "cytatu" */}
-        <View className="rounded-lg border-l-4 border-slate-300 bg-slate-100 p-3">
-          <Text className="text-base leading-relaxed text-gray-700">{summary.summary}</Text>
-        </View>
-      </Section>
+      <CardContent className="gap-8 pt-8">
+        <Section title="Twoje Objawy" icon="activity">
+          <Text className="leading-relaxed text-foreground/90">{summary.summary}</Text>
+        </Section>
 
-      <Section title="Możliwe Kierunki" icon="compass">
-        {/* ZMIANA: Nowy styl listy */}
-        {summary.possibleCauses.map((cause, index) => (
-          <Text key={index} className="mb-1 text-base font-medium text-gray-800">
-            • {cause}
-          </Text>
-        ))}
-      </Section>
-
-      <Section title="Sugerowany Specjalista" icon="user-check">
-        {/* ZMIANA: Styl "pigułki" */}
-        <View className="flex-row flex-wrap">
-          <View className="self-start rounded-full bg-blue-100 px-4 py-2">
-            <Text className="text-base font-semibold text-blue-800">
-              {summary.recommendedSpecialist}
-            </Text>
+        <Section title="Możliwe przyczyny" icon="compass">
+          <View className="mt-1 gap-2">
+            {summary.possibleCauses.map((cause, i) => (
+              <View key={i} className="flex-row items-start gap-2">
+                <View className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <Text className="text-foreground/90">{cause}</Text>
+              </View>
+            ))}
           </View>
-        </View>
-      </Section>
+        </Section>
 
-      <Section title="Pytania do Lekarza" icon="help-circle">
-        {summary.questionsForDoctor.map((question, index) => (
-          <Text key={index} className="mb-1 text-base leading-6 text-gray-700">
-            • {question}
-          </Text>
-        ))}
-      </Section>
+        <Section title="Sugerowany Specjalista" icon="user-check">
+          <View className="mt-1 flex-row">
+            <Badge variant="secondary" className="px-3 py-1.5">
+              <Text className="text-sm font-semibold text-primary">
+                {summary.recommendedSpecialist}
+              </Text>
+            </Badge>
+          </View>
+        </Section>
 
-      {/* ZMIANA: Większy margines */}
-      <View className="mt-6 border-t border-slate-200 pt-4">
+        <Section title="O co zapytać lekarza?" icon="help-circle">
+          <View className="mt-1 gap-3">
+            {summary.questionsForDoctor.map((q, i) => (
+              <View key={i} className="rounded-lg border border-border/50 bg-secondary/50 p-3">
+                <Text className="text-sm italic text-foreground">"{q}"</Text>
+              </View>
+            ))}
+          </View>
+        </Section>
+      </CardContent>
+
+      <CardFooter className="justify-center border-t border-border/40 bg-muted/5 pb-2 pt-6">
+        {/* Przekazujemy listRef do widgetu, aby mógł scrollować przy pisaniu */}
         <FeedbackWidget messageId={messageId} listRef={listRef} />
-      </View>
-
-      {/* ZMIANA: Nowy, wyróżniony disclaimer */}
-      <View className="mt-5 rounded-lg bg-slate-100 p-3">
-        <View className="flex-row items-center">
-          <Feather name="info" size={16} color="#4b5563" />
-          <Text className="ml-2 flex-1 text-sm text-gray-600">
-            To podsumowanie zostało wygenerowane przez AI. Pamiętaj, aby skonsultować się z
-            prawdziwym lekarzem.
-          </Text>
-        </View>
-      </View>
-    </View>
+      </CardFooter>
+    </Card>
   );
 };
 
